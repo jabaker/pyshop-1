@@ -1,4 +1,4 @@
-Current TimeZone
+#Current TimeZone
 
 import pendulum
 
@@ -8,7 +8,7 @@ now = pendulum.now()
 time_zone = pendulum.local(now.year, now.month, now.day).timezone.name
 
 
-UTC Offset
+#UTC Offset
 
 import pendulum
 
@@ -18,7 +18,7 @@ now = pendulum.now()
 off_set = int(str(now).split("-")[-1].split(":")[0])
 
 
-Unix Time
+#Unix Time
 
 import pendulum
 
@@ -30,7 +30,7 @@ unix_seconds = int(now.format("X"))
 unix_seconds = int(pendulum.now().timestamp())
 
 
-Round time to interval
+#Round time to interval
 
 import pendulum
 
@@ -45,7 +45,7 @@ end_datetime = now.replace(minute=round_minutes(now, 15))
 start_datetime = end_datetime.subtract(hours=1)
 
 
-Amazon week number from datetime
+#Amazon week number from datetime
 
 import pendulum
 
@@ -72,7 +72,7 @@ def get_week_start(dt: pendulum) -> pendulum:
 start_datetime = get_week_start(now)
 
 
-Converting
+#Converting
 
 import pendulum
 
