@@ -68,7 +68,7 @@ class Weeks:
 
         return int(date_diff / np.timedelta64(1, "W"))
 
-    def get_amazon_holidays(self) -> list:
+    def get_paid_holidays(self) -> list:
         not_celebrated = ["Presidents Day", "Columbus Day", "Veterans Day"]
 
         df = USFederalHolidayCalendar().holidays(
