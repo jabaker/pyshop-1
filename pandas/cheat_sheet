@@ -16,3 +16,23 @@ df.columns = df.columns.get_level_values(0)
 
 #Collapse rows to list
 df = df.groupby("column of non-unique values").agg(lambda x: tuple(x)).applymap(list).reset_index()
+
+#Combine string columns and drop old columns
+df["full_name"] = [" ".join(x) for x in zip(df.pop("first_name").map(str), df.pop("last_name").map(str))]
+
+#Compare two dataframes differences
+df = df1[~df1.isin(df2)]
+
+#Convert Float to Percent
+df["Column1"] = ((df["Column1"]/100).apply('{:.0%}'.format))
+
+#Convert Percent to Float
+df["Column1"] = df["Column1"].replace("%","",regex=True).astype("float")/100
+
+#Convert multiple str columns to title case
+df = df.applymap(lambda x: x.title() if type(x) == str else x)
+OR
+df = df.apply(lambda x: x.astype(str).str.title() if (x.dtype == "object") else x)
+
+#Convert UNIX time column to local time with UTC offset
+df["Column1"] = pd.to_datetime(df["Column1"], unit="ms").dt.tz_localize("UTC").dt.tz_convert(tz).dt.tz_localize(None)
