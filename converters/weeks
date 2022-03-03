@@ -1,0 +1,84 @@
+import calendar
+
+import numpy as np
+import pandas as pd
+import pendulum
+from pandas.tseries.holiday import USFederalHolidayCalendar
+
+
+class Weeks:
+    """
+    see sample/test_weeks.py for examples
+    :arg start_datetime: str or datetime
+    :arg end_datetime: str or datetime
+    :arg day_name: str
+    :arg weeks: list
+    :arg week_numbers: list
+    """
+    def __init__(self, **kwargs):
+        start_datetime = kwargs.get("start_datetime", pendulum.now())
+        self.start_datetime = pendulum.parse(start_datetime) if isinstance(start_datetime, str) else start_datetime
+        end_datetime = kwargs.get("end_datetime")
+        self.end_datetime = pendulum.parse(end_datetime) if isinstance(end_datetime, str) else end_datetime
+        self.current_date = self.start_datetime.add(days=1 if self.start_datetime.day_of_week == 0 else 0)
+        self.day_name = kwargs.get("day_name", "Sunday")
+        self.weeks = kwargs.get("weeks")
+        self.week_numbers = kwargs.get("week_numbers")
+
+    def range_of_week_numbers(self) -> list:
+        week_dates = pd.date_range(
+            start=self.current_date.to_date_string(), periods=self.weeks, freq="W"
+        ).strftime("%Y-%m-%d").tolist()
+
+        return [pendulum.parse(x).week_of_year for x in week_dates]
+
+    def weeks_date_range(self) -> list:
+        weeks_range = []
+        for week in self.week_numbers:
+            year = self.start_datetime.add(years=1).year if week < (
+                    self.current_date.week_of_year - 26
+            ) else self.start_datetime.year
+            start_of_week = pendulum.parse(f"{year}W{str(week).zfill(2)}", strict=False).subtract(days=1)
+            weeks_range.append(start_of_week.to_date_string())
+            end_of_week = start_of_week.add(days=6)
+            weeks_range.append(end_of_week.to_date_string())
+
+        return [weeks_range[0], weeks_range[-1]]
+
+    def ordered_days(self) -> list:
+        days = [x for x in calendar.day_name]
+        for _ in days:
+            days.insert(0, days.pop())
+            if days[0] == self.day_name.title():
+                break
+
+        return days
+
+    def start_of_week(self) -> pendulum:
+        return self.start_datetime.previous(pendulum.SUNDAY).add(weeks=1 if self.start_datetime.day_of_week == 0 else 0)
+
+    def get_week_from_date(self) -> int:
+        return self.start_datetime.add(days=1).isocalendar()[1]
+
+    def week_delta(self) -> int:
+        date_diff = (
+                pd.to_datetime(self.end_datetime.date()) -
+                pd.to_datetime(self.start_datetime.date())
+        )
+
+        return int(date_diff / np.timedelta64(1, "W"))
+
+    def get_amazon_holidays(self) -> list:
+        not_celebrated = ["Presidents Day", "Columbus Day", "Veterans Day"]
+
+        df = USFederalHolidayCalendar().holidays(
+            start=self.start_datetime.start_of("year").to_datetime_string(),
+            end=self.start_datetime.end_of("year").to_datetime_string(),
+            return_name=True
+        ).reset_index()
+
+        df.columns = ["date", "holiday"]
+        df["date"] = df["date"].astype(str)
+        df = df[~(df["holiday"].isin(not_celebrated))]
+
+        return df["date"].tolist()
