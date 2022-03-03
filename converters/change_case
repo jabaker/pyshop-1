@@ -1,0 +1,22 @@
+import re
+
+
+def to_snake_case(string_to_fix: str) -> str:
+    cleaner = re.findall(r"[A-Z]?[a-z]+|[A-Z]{2,}(?=[A-Z][a-z]|\d|\W|$)|\d+", string_to_fix)
+    return "_".join([x.lower() for x in cleaner])
+
+
+def camel_to_snake(string_to_fix: str) -> str:
+    return "".join([f"_{x.lower()}" if x.isupper() else x for x in string_to_fix]).lstrip("_")
+
+
+def snake_to_camel(string_to_fix: str) -> str:
+    return "".join(x.title() for x in string_to_fix.split("_"))
+
+
+def upper_to_lower(x: str) -> str:
+    try:
+        x = f"{x.split('.')[0]}{x.split('.')[1].title()}" if x.split('.')[1].isupper() else x
+    except IndexError:
+        pass
+    return x
