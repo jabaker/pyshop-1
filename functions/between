@@ -1,0 +1,2 @@
+def in_between(now: int, start: int, end: int) -> bool:
+    return start <= now < end if start <= end else start <= now or now < end
