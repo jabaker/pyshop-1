@@ -1,0 +1,37 @@
+
+import itertools
+
+import numpy as np
+import pandas as pd
+
+
+class Converter:
+    def __init__(self, **kwargs) -> None:
+        self.start = kwargs.get("start")
+        self.end = kwargs.get("end")
+        self.list = kwargs.get("list")
+
+    def us_dates(self) -> tuple:
+        date_range = [x.strftime("%m/%d/%Y") for x in pd.date_range(self.start, self.end)]
+
+        return tuple(itertools.chain(date_range))
+
+    def uk_dates(self) -> tuple:
+        date_range = [x.strftime("%d/%m/%Y") for x in pd.date_range(self.start, self.end)]
+
+        return tuple(itertools.chain(date_range))
+
+    def iso_dates(self) -> tuple:
+        date_range = [x.strftime("%Y-%m-%d") for x in pd.date_range(self.start, self.end)]
+
+        return tuple(itertools.chain(date_range))
+
+    def week_numbers(self) -> tuple:
+        return tuple(itertools.chain(list(map(str, range(self.start, self.end)))))
+
+    def list_to_tuple(self) -> tuple:
+        val = self.list.tolist() if isinstance(self.list, np.ndarray) else self.list
+        val_list = val if isinstance(val, list) else [val]
+        val_list.append("") if len(val_list) < 2 else val_list
+
+        return tuple(itertools.chain(val_list))
