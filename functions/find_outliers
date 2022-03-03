@@ -1,0 +1,20 @@
+import numpy as np
+
+
+class Outliers(object):
+    def __init__(self, **kwargs):
+        self.threshhold = kwargs.get("threshhold")
+        self.data = kwargs.get("data")
+
+    def detect_outliers(self) -> list:
+        mean = np.mean(self.data)
+        std = np.std(self.data)
+
+        return [x for x in self.data if np.abs((x - mean) / std) > 3]
+
+    def reject_outliers(self) -> list:
+        normalized_distribution = np.abs(self.data - np.median(self.data))
+        median_divisor = np.median(normalized_distribution)
+        deviation = normalized_distribution/median_divisor if median_divisor else 0
+
+        return self.data[deviation < 2]
