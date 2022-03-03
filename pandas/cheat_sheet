@@ -1,0 +1,888 @@
+#Append value to data frame cell
+df.set_value("Row1", "Column3", 10)  
+# or
+df.ix["Row1", "Column3"]=10  
+# or
+df.loc["Row1", "Column3"]=10 
+
+
+#Boolean Indexing
+df.loc[(df["Column1"] == "Login") & (df["Column2"] == "ID") & (df["Column3"] == "Y"), ["Column1", "Column2", "Column3"]]        
+
+#Change all NaNs to None (useful before loading to a db)
+df = df.where((pd.notnull(df)), None)         
+
+#Change data type of DataFrame column
+df.Column1 = df.Column1.astype(np.int64) # obj, float, str
+
+#Clean up headers that contain dot notation path
+df.columns = df.columns.str.split(".").str[-1]
+
+#Clean up missing values in multiple DataFrame columns
+df = df.fillna({
+    'col1': 'missing',
+    'col2': '99.999',
+    'col3': '999',
+    'col4': 'missing',
+    'col5': 'missing',
+    'col6': '99'
+})
+
+#Collapse hierarchical column indexes
+df.columns = df.columns.get_level_values(0)
+
+#Collapse rows to list
+df = df.groupby("column of non-unique values").agg(lambda x: tuple(x)).applymap(list).reset_index()
+
+#Column manipulation (subtraction)
+df["NEWCOLUMN"] = df["COLUMN1"] - df["COLUMN2"]
+
+#Column manipulation (division)
+df[["NEWCOLUMN"]] = df[["COLUMN1"]].div(df.COLUMN2, axis=0)
+
+#Column names to lower case
+df.columns = map(str.lower, df.columns)
+
+#Combine string columns and drop old columns
+df["full_name"] = [" ".join(x) for x in zip(df.pop("first_name").map(str), df.pop("last_name"))]
+
+#Compare two data frames column differences
+df = df1[~df1.isin(df2)]
+
+#Concatenate multiple CSV files into a dataframe
+import glob
+import pandas as pd
+
+# Set Path
+path = "//Ant/dept-na/FC/location/toyour/files"
+# Find files
+files = glob.glob(path + "*.csv")
+# Create data frame
+frame = pd.DataFrame()
+# Create a blank list
+list_ = []
+# Loop all files to list
+for file_ in files:
+    df = pd.read_csv(file_, index_col=None, header=0)
+    list_.append(df)
+# Concatenate all files in list to data frame
+df = pd.concat(list_)
+df
+Concatenate two DataFrame columns into a new, single column(useful when dealing with composite keys, for example)
+df["NewColumn"] = [" ".join(x) for x in zip(df.pop("Column1").map(str), df.pop("Column2").map(str))]
+
+OR
+
+df["NewColumn"] = df["Column1"].map(str) + df["Column2"].map(str)
+
+OR
+
+df["NewColumn"] = df["Column1"] + df["Column2"]
+Concatenate two rows into a new single row
+import pandas as pd
+
+
+# Import CSV
+data = pd.read_csv("//ANT/dept-na/RNO4/TEST.csv", names = ["0", "1", "2", "3"])
+
+# Create dataframes
+df = pd.DataFrame(data)
+
+print(df)
+pd_snip.JPG
+
+import pandas as pd
+
+# Import CSV
+data = pd.read_csv("//ANT/dept-na/RNO4/TEST.csv", names = ["0", "1", "2", "3"])
+
+# Create dataframes
+df = pd.DataFrame(data)
+
+# Concat 2 rows into 1
+cols = [name + '_{}'.format(num // len(df.columns)) for num, name in
+        enumerate(df.columns.tolist() * len(df))]
+df = pd.DataFrame(df.values.reshape(1, -1), columns=cols)
+
+print(df)
+pd_snip2.JPG
+
+Concatenate two series into a data frame
+
+df = pd.concat([Series1, Series2], axis=1, sort=True).sort_index()
+
+Convert column named "Date" with dates to an actual date column
+p1.JPG
+
+import pandas as pd
+
+mc = ["Date", "ID", "Process", "Login", "Manager", "Time"]
+data = pd.read_csv("//ant/dept-na/yourfc/path/to your/stuff/file.csv", error_bad_lines=False, header=None, delimiter="\t", names=mc)
+df = pd.DataFrame(data)
+df.dtypes
+The column "Date" is an object but we need datetime64
+p2.JPG
+
+#import pandas as pd
+import datetime
+
+#mc = ["Date", "ID", "Process", "Login", "Manager", "Time"]
+#data = pd.read_csv("//ant/dept-na/yourfc/path/to your/stuff/file.csv, error_bad_lines=False, header=None, delimiter="\t", names=mc)
+#df = pd.DataFrame(data)
+df["Date"] = pd.to_datetime(df["Date"])
+df.dtypes
+The column "Date" now has a data type of datetime64
+p3.JPG
+
+Convert the datetime column into the day of the week
+# Day of week
+df["Date"] = df["Date"].dt.weekday_name
+Convert Django queryset to DataFrame
+qs = DjangoModelName.objects.all()
+q = qs.values()
+df = pd.DataFrame.from_records(q)
+Convert Float to Percent
+df["Column1"] = ((df["Column1"]/100).apply('{:.0%}'.format))
+Convert Percent to Float
+df["Column1"] = df["Column1"].replace("%","",regex=True).astype("float")/100
+(You can convert multiple columns from percents to floats like this:)
+
+df[["Column1", "Column2"]] = df[["Column1", "Column2"]].replace("%", "", regex=True).astype("float")/100
+Convert Series datatype to numeric, getting rid of any non-numeric values
+df["Column1"] = df["Column1"].apply(lambda x: pd.to_numeric(x.astype(str).str.replace(",", ""), errors="coerce"))
+Convert Scientific Notation to int
+pd.set_option("display.float_format", lambda x: "%.0f" % x)
+Convert str to int
+df["Column1"] = pd.to_numeric(df["Column1"], errors='coerce').fillna(0).astype(int)
+Convert multiple columns str to int
+# Columns to integer
+cols = [i for i in df.columns if i not in ["Column1", "Column5", "Column7"]]
+for col in cols:
+    df[col] = pd.to_numeric(df[col]).fillna(0).astype(int)
+Convert multiple str columns to title case
+df = df.applymap(lambda x: x.title() if type(x) == str else x)
+
+OR
+
+df = df.apply(lambda x: x.astype(str).str.title() if (x.dtype == "object") else x)
+Convert UNIX time column to local time with UTC offset
+df["Column1"] = pd.to_datetime(df["Column1"], unit="ms")
+    .dt.tz_localize("UTC") \
+    .dt.tz_convert(tz) \
+    .dt.tz_localize(None)
+Count column based off criteria from another column (countifs)
+df["CountColumn"] = df.groupby("CriteriaColumn")["ColumntoSum"].transform(sum)
+Create a DataFrame from a Python dictionary
+df = pd.DataFrame(list(a_dictionary.items()), columns = ["Column1", "Column2"]
+Create a Dictionary from a Python dataframe
+df_dict = df.set_index("Column1")["Column2"].to_dict()
+
+OR
+
+df_dict = dict(zip(df["Column1"], df["Column2"]))
+Create Dictionaries of Lists from a Python dataframe
+df_dict = df.set_index("Column1").T.to_dict("list")
+Create a dummy column (flag) (Useful in Machine Learning Models)
+# Using .map
+df["IsSortable"] = df["FCType"].map({"non-sort": 0, "sortable": 1})
+
+# Using get_dummies on a Series
+df["IsSortable"] = pd.get_dummies(df["FCType"]).iloc[:, 1:]
+
+# Using get_dummies on a DataFrame
+df = pd.get_dummies(df, columns=["FCType"], drop_first=True)
+Cumulative Total
+import pandas as pd
+
+
+data = {
+    'site_code': ["DDT2", "DDT2", "DDT2", "DDT2", "DDT2", "DDT2"],
+    'time': ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00"],
+    'hours': [35.998611, 62.214722, 66.084167, 61.673889, 55.462500, 43.476389],
+}
+index = [0, 1, 2, 3, 4, 5]
+
+df = pd.DataFrame(data, index=index)
+df["cumulative_hours"] = df["hours"].cumsum()
+df = df.round(2)
+
+print(df)
+DataFrame logic and categorization
+# Create new column with logic
+df["Logic"] = df["Column1"] > df["Column2"]
+
+# Filter columns where logic is true
+df1 = df[(df["Column2"] > df["Column1"])]
+
+# Show only columns with gain > 1 
+df["Gain"] = df["Column2"] - df["Column1"]
+df2 = df[(df["Gain"] > 1)]
+DataFrame replace
+#(using REGEX)replace all zeros with NA
+df.replace({0:"NA"}, regex=True)
+Date range
+import pendulum
+import pandas as pd
+
+
+start_date = pendulum.now().subtract(days=7).date()
+end_date = pendulum.now().date()
+
+date_range = [x.strftime("%Y-%m-%d") for x in pd.date_range(start_date, end_date)]
+print(date_range)
+Delete column from DataFrame based on column title
+del(df["Column1"])
+Describe Dataframe
+describe = df.describe()
+describe["Column1"]["max"]
+Difference between float columns as percentage
+df["+/- 7 day vs 3 Wk Avg"] = ((df["7 day rolling Avg"] - df["3 Wk Avg"]) / df["3 Wk Avg"]) * 100
+df["+/- 7 day vs 3 Wk Avg"] = df["+/- 7 day vs 3 Wk Avg"].fillna(0)
+df["+/- 7 day vs 3 Wk Avg"] = (df["+/- 7 day vs 3 Wk Avg"] / 100).apply("{:.1%}".format)
+Drop all NANs in dataframe
+df = df.dropna()
+Drop columns containing empty lists
+df = df.mask(df.applymap(str).eq("[]")).dropna(axis=1, how="all")
+Drop columns containing all NANs in dataframe
+df.dropna(axis=1, how='all', inplace=True)
+Drop columns where column names are NAN
+df = df.loc[:, df.columns.notnull()]
+Drop NANs in specific column
+df.dropna(subset = ["Column1"], inplace=True)
+Drop column from DataFrame based on column title
+df.drop("Column1", axis=1, inplace=True)
+Drop column from DataFrame based on partial column title
+df = df[df.columns.drop(list(df.filter(regex="|".join(["Utc", "UTC"]))))]
+
+OR
+
+df = df[df.columns.drop(list(df.filter(regex="Utc|UTC")))]
+Drop last 5 columns from DataFrame
+df = df.iloc[:, :-5]
+Drop all but last 5 columns from DataFrame
+df = df[df.columns[-5:]]
+Drop duplicates
+df.drop_duplicates(keep="first") # also keep="last" or keep=False
+Drop duplicates on specific columns only
+df.drop_duplicates(subset=["Column1", "Column3", "Column4"], keep="first", inplace=True) # also keep="last" or keep=False
+Drop duplicates on specific multi-index
+df = df[~df.index.get_level_values(0).duplicated(keep="first)]
+Drop duplicate columns
+df = df.loc[:, ~df.columns.duplicated()
+Drop index while exporting to CSV
+df.to_csv("//path/to/your/saved/location/file.csv", index=False)
+Drop all columns from DataFrame except Column1
+df = df[["Column1"]]
+Drop all columns from DataFrame except Column1
+df = df.loc[:, ["Column1"]]
+Drop multiple columns from DataFrame based on column titles
+df.drop(["Column1","Column3","Column4"], axis=1, inplace=True)
+Drop multiple columns from DataFrame based on column titles if they exist
+to_drop = ["Column1","Column3","Column4"]            
+drop_list = [i for i in df.columns if i in to_drop]
+df.drop(drop_list, axis=1, inplace=True)
+Drop columns from DataFrame based on column numbers
+df.drop(df.columns[[0,2,4,6,8,10,12,14,16,18]], axis=1, errors="ignore")
+(You can also just use a range of columns)
+
+df = pd.read_excel("//path/to your/saved/location/Book1.xlsx", usecols=range(1,7))
+Drop Multi-Index headers keeping 2nd row
+df.columns = df.columns.get_level_values(1)
+Drop all rows except
+df.query("Column1 == 'Blow, Joe'", inplace=True)
+Drop all rows except (using a list of values)
+names = ["Blow, Joe", "Smith, John"]
+
+df = df.query("Column1 == [@names[0], @names[1]]")
+Drop all rows except if it contains :
+df = df[df["Column1"].str.contains(":") == True]
+Drop row from DataFrame based on exact data in column
+df = df[df.Column1 != "Blow, Joe"]
+Drop rows from DataFrame based on multiple exact data in column
+df = df[df["Column1"].isin(["bork", "foo", "bar", "baz", "spam"])]
+OR
+
+to_drop = ["bork", "foo", "bar", "baz", "spam"]
+df = df[~df["Column1"].isin(to_drop)]
+OR
+
+df = df[~df["Column1"].isin(["bork", "foo", "bar", "baz", "spam"])]
+Drop rows from DataFrame based on partial str
+df = df[~df["Column1"].str.contains("spam")]
+OR
+
+df = df[df["Column1"].str.contains("spam") == False]
+Drop row from DataFrame based on index
+df.drop(1, axis=0, inplace=True)
+Drop rows from DataFrame based on column value
+df.loc[(df!=0).any(axis=1)]
+Export data frame as csv
+df.to_csv("//path/your/saved/location/yourfile.csv") # , index = False
+Export data frame to Excel
+
+# Create a Pandas Excel writer using XlsxWriter as the engine.
+writer = pd.ExcelWriter("//Ant/dept-na/yourfc/location/to/your/shared/file/multiple_dataframes.xlsx", engine="xlsxwriter")
+
+Export data frame as hdf5
+df.to_hdf("//path/your/saved/location/yourfile.h5", "d1")
+Export data frame to html
+df.to_html("//path/your/saved/location/yourfile.html")
+Export data frame as json
+df.to_json("//path/your/saved/location/yourfile.json")
+Export data frame as pickle (serialized data)
+df.to_pickle("//path/your/saved/location/yourfile.pickle")
+Extract numbers from string to new column
+df["Numbers"] = df["Column1"].str.extract("([1-9]\w{0,})", expand=True)
+Extract letters from string to new column
+df["Words"] = df["Column1"].str.extract("([A-Z]\w{0,})", expand=True)
+Extract substring from string in column if contained in list
+import re
+import pandas as pd
+
+
+dept_list = ["STOW", "PICK", "PACK", "RECEIVE"]
+df["processPath"] = (df["coachingReason"]
+                    .str.extract("({})".format("|".join(dept_list)),
+                    flags=re.IGNORECASE, expand=False).str.lower().fillna(""))
+Extract all substrings from string in column if contained in list
+import re
+import pandas as pd
+
+
+dept_list = ["STOW", "PICK", "PACK", "RECEIVE"]
+extracted = df["coachingReason"].str.findall("(" + "|".join(dept_list) + ")", flags=re.IGNORECASE) 
+df["processPath"] = extracted.str.join(',')
+Fill NAN values
+# You can replace all the nans
+df.fillna(how="all", inplace=True)
+# You can drop all the nans
+df.dropna(inplace=True)
+# You can add backfill
+df.fillna(method="bfill", inplace=True)
+# You can add forwardfill
+df.fillna(method="ffill", inplace=True)
+# You can fill with a chosen value
+df.fillna(value="0", inplace=True)
+# You can fill with a chosen value for a specific percentage of your data.
+percent = len(df)*0.01
+df.fillna(value="0", inplace=True, limit=percent)
+# You can fill with the mean
+df.fillna(df.mean(), inplace=True)
+Filter columns by header
+df = df[["Column1", "Column3", "Column7"]]
+Filter columns by headers containing
+keep_cols = ["DATE_TIME", "FC", "WIP"]
+df = df.loc[:, df.columns.str.contains("|".join(keep_cols))]
+Filter data in col by only the last hour
+df["Column1"] = (df["Column1"] > pd.datetime.now() - pd.Timedelta(hours=1)) & (df["Column1"] <= pd.datetime.now())
+Filter data in col for last hour of available data
+# Time range
+now = pendulum.now().to_datetime_string()
+hour_ago = pendulum.now().subtract(hours=1).to_datetime_string()
+
+df = df[df["Column1"].between(hour_ago, now, inclusive=True)]
+Filter data in col for last hour of available data
+df = df[df["Column1"] > df["Column1"].max() - pd.Timedelta(hours=1)]
+Filter data in col using exact criteria
+df = df[df["Column1"]=="Blow,Joe"]
+Filter data in col using exact criteria
+df = df.loc[df["Column1"] == "Blow,Joe"]
+Filter data in col using multiple exact criteria
+import numexpr
+df.query("Column1 == ["Blow,Joe","Doe,John"]")
+# Or
+df1 = df[df["Column1"].isin(["Blow,Joe","Doe,John"])]
+We can string queries together and use sort to control how the data is ordered.
+
+df[(df["Column1"].str.contains("Bl")) & (df["Column2"]>40)].sort(columns=["Column2","Column1"],ascending=[0,1])
+Filter data in col using partial criteria
+df[df["Column1"].map(lambda x: x.startswith("Bl"))]
+It’s easy to chain two or more statements together using the &.
+
+df[df["Column1"].map(lambda x: x.startswith("Bl")) & (df["quantity"] > 22)]
+OR
+
+df = df[df["Column1"].str.contains("Bl") | df["Column1"].str.contains("Jo") | df["Column1"].str.contains("na")]
+OR
+
+df = df[df.Column1.str.match("Bl|Jo", case=False)]
+Filter data in row using partial criteria
+df = df[df[1].str.contains("foo", case=False)]
+Filter data in row using partial multiple criteria
+df = df[df[1].str.contains("foo|bork")]
+Filter data and get cell value
+df = df[df["Name"] == "Tom"].squeeze()["Age"]
+
+# OR
+
+df = df.loc[df["Name"] == "Tom"].reset_index(drop=True).at[0, "Age"]
+Filter dates in column by range
+df = df[(df["Column1"] > "2017-01-01") & (df["Column1"] < "2017-02-16")]
+Filter data in both multi-index
+df = df.loc[("AK", "Valdez")]
+Filter data on first multi-index
+df = df.loc["AK"]
+Find all duplicates
+print(df[df.duplicated()])
+Find the average in a data frame column
+df["Column1"].mean()
+Find columns that contain a substring
+found_substring_list: list = [col for col in df.columns if df[col].str.contains("text your looking for").any()]
+Find data in a range
+(Find data with dates in "Date" column that are greater than or equal to 2017-01-20)
+
+df[df["Column1"]>="2017-01-20"]
+Find value in data frame cell
+df = df.at["Row3", "Column1"]
+Fix column headers function
+def to_snake_case(string_to_fix: str) -> str:
+    cleaner = re.findall(r"[A-Z]?[a-z]+|[A-Z]{2,}(?=[A-Z][a-z]|\d|\W|$)|\d+", string_to_fix)
+    return "_".join([i.lower() for i in cleaner])
+
+# Apply function to column names
+df.columns = df.columns.to_series().apply(to_snake_case)
+Flatten a nested list
+from pandas.core.common import flatten
+
+
+list_of_lists = [[1, 2, 3, ["a", "b", "c"]], [4, 5, 6, ["d", "e", "f"]]]
+flattened_list = list(flatten(list_of_lists))
+print(flattened_list)
+
+>>> [1, 2, 3, 'a', 'b', 'c', 4, 5, 6, 'd', 'e', 'f']
+Get list of column names that contain
+found_in_columns = df.columns[df.isin(["foo", "spam"]).any()].tolist()
+Get data after a specific value in a DataFrame column
+df = df[np.where(df["Column1"] == "WordToSearchFor")[0][0]:]
+Get data from column filtering by multi-index columns
+df = df.loc[("Alaska", "Valdez"), "Population"]
+Get length of data in a DataFrame column
+df.Column1.str.len()
+Get a report of all duplicate records in a dataframe, based on specific columns
+dupes = df[df.duplicated(["Column1", "Column2", "Column3"], keep=False)]
+Get rid of non-numeric values throughout a DataFrame:
+for col in refunds.columns.values:
+  refunds[col] = refunds[col].replace("[^0-9]+.-", "", regex=True)
+Get top n for each group of columns in a sorted dataframe (make sure dataframe is sorted first)
+top5 = df.groupby(["Column1", "Column2"]).head(5)
+Get list of columns that headers contain a string
+columns = [header for header in df.columns if any(x in header.lower() for x in ["date", "time", "utc"])]:
+Get list of columns that values contain a string
+columns = [header for header in df.columns if any(df[header].astype(str).str.contains("spam"))]
+Get list of values
+valuelist = ["value1", "value2", "value3"]
+Get quick count of rows in a DataFrame
+len(df.index)
+Grab DataFrame rows where column doesn't have certain values
+df = df[~df.column.isin(value_list)]
+Grab DataFrame rows where column has certain values
+df = df[df.column.isin(valuelist)]
+Grab DataFrame rows where specific column is null/notnull
+newdf = df[df["Column1"].isnull()]
+Also
+df = df[pd.notnull(df["Column1"])]
+Group by
+g = df.groupby("Column1")
+# count instances
+g.count()
+# get average
+g.mean()
+# sum
+g.sum()
+# describr
+g.describe()
+# standard deviation
+g.std()
+Group by data types
+types = df.columns.to_series().groupby(df.dtypes).groups
+print(types)
+Group by without an aggregate
+df = df.groupby(["Main Processes", "Line Item", "Core Processes"]).agg(lambda x: x)
+Hyperlink in cell
+# Set ASIN column as hyperlink to FC RESEARCH
+df["ASIN"] = df["ASIN"].apply(lambda x: f"<a href=http://fcresearch-na.aka.amazon.com/RNO4/results?s={x}>{x}</a>")
+Import csv as a data frame
+df = pd.read_csv("//path/to your/saved/location/your file.csv")
+Import csv as a data frame with delimiter (tab)
+df = pd.read_csv("//path/to your/saved/location/your file.csv", delimiter="\t") # also (space) ="\s+" 
+Import csv as a data frame without headers
+df = pd.read_csv("//path/to your/saved/location/your file.csv", header=None)
+Import csv as a data frame with encoding
+df = pd.read_csv("//path/to your/saved/location/your file.csv", encoding="ascii", errors="replace") # also encoding="cp1252" - "utf-8" - "utf-16" - "ISO-8859-1"
+and many others https://docs.python.org/3/library/codecs.html#standard-encodings
+
+Import multiple csv files as multiple data frames
+import os
+import glob
+import pandas as pd
+
+
+# Setting up path
+path = "//Path/to/your/files/"
+
+# File format
+extension = "csv"
+
+# Set path as current working directory
+os.chdir(path)
+
+files = [i for i in glob.glob("*.{}".format(extension))]
+
+# Set variable to increment
+j = 1
+
+for file in files:
+    f = (path + file)
+    data = pd.read_csv(f)
+    df = ("df" + str(j))
+    df = pd.DataFrame(data)
+    print(df)
+
+    j += 1
+
+Import excel as a data frame without headers
+df = pd.read_excel("//path/to your/saved/location/your file.xlsx", header=None)
+Import hdf5 as a data frame
+df = pd.read_hdf("//path/your/saved/location/yourfile.h5", "d1")
+Import json as a data frame
+df = pd.read_json("//path/your/saved/location/yourfile.json")
+Import data from a Mongo Database as a data frame
+import pymongo
+import pandas as pd
+from pymongo import 
+
+Connection
+connection = Connection()
+db = connection.database_name
+input_data = db.collection_name
+data = pd.DataFrame(list(input_data.find()))
+Import pickle as a data frame
+df = pd.read_pickle("//path/your/saved/location/yourfile.pickle")
+Insert column at position
+df.insert(loc=0, column="FC", value=fc)
+Join list of DataFrames on like column
+import pandas as pd
+from functools import reduce
+
+
+dfs = [df1, df2, df3]
+df_final = reduce(lambda left, right: pd.merge(left, right, on="Site"), dfs)
+Lambda with elif
+df["Time off Task"] = df.apply(lambda x: x["Time off Task"] - pd.Timedelta(minutes=14) if
+                                           x["Process"] in ["Stow", "Transfer-In/Stow"] else
+                                           (x["Time off Task"] - pd.Timedelta(minutes=4) if
+                                            x["Process"] == "Receive" else x["Time off Task"]), axis=1)
+List unique values in a DataFrame column
+pd.unique(df.Column1.ravel())
+List headers in the DataFrame
+list(df)
+Loading a CSV file into a DataFrame
+df=pandas.read_csv("filename.csv")
+Loading an Excel file into a DataFrame
+df=pandas.read_excel("filename.xlsx", sheetname="Sheet1")
+Loading a Fixed Width File into a DataFrame
+df=pandas.read_fwf("filename.csv")
+Loading a TXT file into a DataFrame
+df=pandas.read_csv("filename.txt")
+Loop through rows in a DataFrame
+for index, row in df.iterrows():
+    print index, row["Column1"] 
+Lower/Upper-case all DataFrame column names
+df.columns = map(str.lower, df.columns) 
+df.columns = map(str.upper, df.columns)
+Lower/Upper-case everything in a DataFrame column
+df.column_name = df.column_name.str.lower()
+df.column_name = df.column_name.str.upper()
+Merge two columns in a DataFrame
+import pandas as pd
+
+# Name the columns
+col=("Column1", "Column2")
+# Import CSV as DataFrame (don't read any data from other columns, no header, use column names from variable "col"
+df = pd.read_csv("//path/to your/saved/location/your_file.csv", error_bad_lines=False, header=None, names=col)
+# Replace nans with blank space
+df = df.where((pd.notnull(df)),"")
+# Name new column "NewColumn" and concatenate columns titled "Column1" and "Column2" 
+df["Newcolumn"] = df.Column1.astype(str).str.cat(df.Column2.astype(str))
+# display DataFrame
+display(df)
+Merge two CSV files by joining on the column named "TITLE"
+import pandas
+
+left="File1.csv"
+right="File2.csv"
+output="Merged_Files.csv"
+leftDf=pandas.read_csv(left)
+rightDf=pandas.read_csv(right)
+mergedDf=pandas.merge(leftDf, rightDf, left_on="TITLE", right_on="TITLE")
+mergedDf.set_index(["TITLE", "TITLE2"],inplace=True)
+mergedDf.to_csv(output)
+Merge 2 columns into a list and remove duplicates
+roster_list = pd.unique(df[["EMPLOYEE", "MANAGER"]].values.ravel("K"))
+Merge string columns date and time as date_time column
+df["date_time"] = pd.to_datetime(df.pop("date")) + pd.to_timedelta(df.pop("time"))
+Merge 2 data frames with col header named Column2
+df1.merge(df2,how="left", left_on="Column2",right_on="Column2")
+Merge 2 data frames with col header named Column2 with fuzzy matching
+from fuzzywuzzy import process
+
+# Fuzzy match
+df1["Column2"] = df1["Column2"].apply(lambda x: [process.extract(x, df2["Column2"], limit=1)][0][0][0])
+
+df1.merge(df2,how="left", left_on="Column2",right_on="Column2")
+Merge 2 series using concatenation
+import pandas as pd
+import numpy as np
+
+np.random.seed(567)
+s1 = pd.Series(np.random.rand(5))
+s2 = pd.Series(np.random.rand(5))
+combo = pd.concat([s1, s2])
+combo.index = range(combo.count())
+print (combo)
+
+0    0.304782
+1    0.953033
+2    0.964709
+3    0.343762
+4    0.993886
+5    0.302074
+6    0.876231
+7    0.705643
+8    0.681150
+9    0.548266
+Move column to new index
+cols = df.columns.tolist()
+cols.insert(0, cols.pop(cols.index("Column15")))
+df = df.reindex(columns=cols)
+Move columns to Multi-index
+df.set_index(keys=["State", "City"], inplace=True)
+Multiple Columns from Single Lambda
+df[["column_1", "column_2", "column_3"]] = df["existing_column"].apply(lambda x: pd.Series([1, 2, 3]))
+Nans - nulls - missing data
+(Drop rows with nan data under "Column1")
+
+df.dropna(subset=["Column1"], inplace=True)
+Next few examples show how to work with text data in Pandas.
+Full list of .str functions:
+http://pandas.pydata.org/pandas-docs/stable/text.htm
+
+Parse string to (5) columns by delimiter (" ")
+df = df["Column1"].str.split(" ", expand=True, n=5)
+Performing calculations with DataFrame columns that have missing values
+df["newcolumn"] = np.where(pd.isnull(df["Column1"]),0,df["Column1"]) + df["Column2"]
+Performing calculations with timedeltas in Dataframe columns with datetime
+df["Column2"] = df["Column1"] + pd.Timedelta(minutes=30) # also days=, hours=, seconds=, weeks=
+Pipe Multiple Functions
+import pandas as pd
+
+
+# Create Dataframe
+df = pd.DataFrame()
+df["Manager"] = ["John", "Steve", "Sarah", "Mike"]
+df["Dept_Name"] = ["Pick", "Stow", "Pick", "Stow"]
+df["Dept_Id"] = [1, 18, 13, 7]
+
+# Groups the data by a column and returns the mean per group
+def mean_age_by_group(dataframe: pd.DataFrame, column: str):
+    return dataframe.groupby(column).mean()
+
+# Capitalizes all the column headers
+def uppercase_column_name(dataframe: pd.DataFrame):
+    dataframe.columns = dataframe.columns.str.upper()
+    return dataframe
+
+# Creates a pipeline that applies the two functions
+df = (df.pipe(mean_age_by_group, column="Dept_Name").pipe(uppercase_column_name))
+print(df)
+
+Pivottable dataframe
+df = df.pivot_table(values=["DPMO", "IRDR"], index=["FC", "DIRECTOR"], columns="FC_TYPE", aggfunc="sum")
+
+OR
+
+df = pd.pivot_table(df, values=["DPMO", "IRDR"], index=["FC", "DIRECTOR"], columns="FC_TYPE", aggfunc="sum")
+Pivot dataframe
+df = df.pivot(index="COUNTRY", columns="CONTINENT", values="POPULATION")
+Read from clipboard (select data in Excel copy to clipboard)
+df = pd.read_clipboard()
+Rename Column by index
+df.rename(columns={df.columns[0]: "NEW_NAME"}, inplace=True)
+Rename Column in Multi-index
+df.rename(columns={df.columns.levels[1][-1]: " "}, level=1, inplace=True)
+This targets the last column[-1] in the second level[1] of the df
+Rename several DataFrame columns
+df.rename(columns={"col1_old_name": "col1_new_name", "col2_old_name": "col2_new_name",  "col3_old_name": "col3_new_name"}, inplace=True)
+OR
+df.rename({"col1_old_name": "col1_new_name"}, axis="columns", inplace=True)
+Rename all columns to index numbers
+df.columns = range(0,len(df.columns))
+Rename headers in Multi-index
+df.index.set_names(["STATES", "CITIES"], inplace=True)
+Remove decimal
+# Convert column to integer
+df["Column1"] = df["Column1"].astype(int)
+# Round integer
+df.round()
+Reorder columns
+(Enter the columns in the order you want them to appear)
+
+df = df[["Last", "Process", "Employee_ID"]]
+Reorder all columns by index
+(Enter the columns in the order you want them to appear)
+
+df = df[df.columns[[0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 14, 11, 10, 9, 13]]]
+Reorder columns if they exist
+(Enter the columns in the order you want them to appear)
+
+column_order = ["Last", "Process", "Employee_ID", "BORK", "FOO"]
+columns_missing = [x for x in column_order if x not in list(df.columns)]
+
+df = df[[x for x in column_order if x not in columns_missing]]
+Reorder some columns
+(Enter the columns in the order you want them to appear)
+
+column_order = ["Last", "Process", "Employee_ID"]
+df = df[column_order + (df.columns.drop(column_order).tolist())]
+Replace all letters with blanks
+df["Column1"] = df.Column1.str.replace(r"[a-zA-Z]","")
+Replace dataframe values from dictionary set as variable "dic"
+df = df.replace(dic, regex=True)
+Replace header with first row
+df = df.rename(columns=df.iloc[0]).drop(df.index[0])
+Replace specific data in columns with "foo"
+df["Column1"] = df["Column1"].replace(["spam", "bork", "eggs"], "foo")
+OR
+df["Column1"] = df["Column1"].str.replace("spam|bork|eggs", "foo")
+OR
+pattern = "|".join(["spam", "bork", "eggs"])
+df["Column1"] = df["Column1"].str.replace(pattern, "foo")
+Replace " " in column with _
+df["Column1"] = df["Column1"].str.replace(" ", "_")
+Replace multiple values in column
+replace = {"ham": "spam", "egg": "spam", "tomato": "spam", "bacon": "spam"}
+df = df.replace({"Column1": replace})
+Replace NaN in column
+df["Column1"].fillna(0, inplace=True)
+Reset index to 0
+df.reset_index(inplace=True, drop=True)
+Reset Column to Index
+df.set_index("Column1", inplace=True)
+Reset Index to Column
+df = df.reset_index(level=["INDEX_COLUMN_NAME"])
+
+OR
+
+df.reset_index(inplace=True)
+
+OR
+
+df.reset_index(drop=True, inplace=True)
+Reverse column order
+df = df.loc[:, ::-1]
+Rounding numerical values differently in multiple columns
+df.round({"Column1":2, "Column2":3})
+Sample columns
+df = df.loc[:, "Column2": "Column4"]
+Select from DataFrame using multiple keys of a hierarchical index
+df.xs(("index_level_1_value", "index_level_2_value"), level=("level_1", "level_2"))
+Select from DataFrame using criteria from multiple columns
+# (use `|` instead of `&` to do an OR)
+newdf = df[(df["Column1"]>2004) & (df["Column2"]==9)]
+Set DataFrame column by name as row index
+df.set_index("Column1", inplace=True)
+Set DataFrame column by number as row index during read or write
+df = pd.read_csv(newfile.csv, index_col=0)
+or
+
+df = pd.to_csv(newfile.csv, index_col=0)
+Set DataFrame column headers during read
+col = ["Column1", "Column2", "Column3", "Column4", "Column5", "Column6"]
+df = pd.read_csv("//path/to your/saved/location/your file.csv", error_bad_lines=False, header=None, names=col)
+Set Specific DataFrame columns during read
+df = pd.read_csv("//path/to your/saved/location/your file.csv", error_bad_lines=False, header=None, usecols=[0, 1, 4])
+Set DataFrame column value based on other column values
+df.loc[(df["Column1"] == some_value) & (df["Column2"] == some_other_value), ['column_to_change']] = new_value
+Slice values in a DataFrame column (aka Series)
+df.column.str[0:2]
+Sort dataframe by multiple columns
+df = df.sort_values(["Column1", "Column2", "Column3"],ascending=[1,1,0])
+Sort dataframe by Column1, highest to lowest
+df = df.sort_values(by="Column1", ascending=False)
+Sort dataframe by Column1, lowest to highest
+df = df.sort_values(by="Column1", ascending=True)
+Sort dataframe by a set categorical list
+from pandas.api.types import CategoricalDtype
+
+
+df["Rank"] = df["Rank"].astype(CategoricalDtype(categories=["First Place", "Second Place", "Third Place",
+                                                            "Fourth Place", "Last Place"], ordered=True))
+df.sort_values("Rank", inplace=True)
+Sort dataframe by dictionary
+data = [['tom', 10], ['nick', 15], ['juli', 14]]
+
+df = pd.DataFrame(data, columns=['Name', 'Age'])
+custom_dict = {'juli': 1, 'nick': 2, 'tom': 3}
+
+df = df.sort_values(by='Name', key=lambda x: x.map(custom_dict))
+Sort Multi-index
+df.sort_index(ascending=[True, False], inplace=True)
+
+OR
+
+df.sort_index(ascending=[1, 0], inplace=True)
+Split and index on delimiter
+df["LOGIN"] = df["LOGIN"].str.split("@").str[0]
+Split date and time into new columns from datetime column
+df["time"], df["date"] = zip(*[(x.time(), x.date()) for x in df.pop("date_time")])
+
+OR
+
+df["time"],df["date"] = df["date_time"].apply(lambda x: x.time()), df["date_time"].apply(lambda x: x.date())
+
+OR
+
+df["time"] = [d.time() for d in df["date_time"]]
+df["date"] = [d.date() for d in df["date_time"]]
+Split dataframe into smaller frames by column values
+cities = df["CITY"].unique().tolist()
+df_dic = {x: pd.DataFrame for x in cities}
+
+for key in df_dic.keys():
+    df_dic[key] = df[:][df["CITY"] == key]
+    df_dic[key].reset_index(drop=True, inplace=True)
+    print(df_dic[key])
+Split delimited values in a DataFrame column into two new columns (1)
+df["New1"], df["New2"] = df["From"].str.split(":", 1).str
+Split delimited values in a DataFrame column into two new columns (2)
+df["New1"], df["New2"] = zip(*df["From"].apply(lambda x: x.split(": ", 1)))
+Split a row containing a list of dicts to rows of dicts
+df = df.explode("Column1")
+Split list in column to new columns
+df = pd.DataFrame({"Bork": ["ham", "spam"], "Foo": [["1", "3"], ["4", "5"]]})
+
+df.reset_index(inplace=True, drop=True)
+df[["Foo_1", "Foo_2"]] = pd.DataFrame(df["Foo"].tolist(), index=df.index)
+df.drop("Foo", axis=1, inplace=True)
+
+OR  
+
+df = pd.DataFrame({"Bork": ["ham", "spam"], "Foo": [["1", "3"], ["4", "5"]]})
+
+new_df = df["Foo"].apply(pd.Series)
+new_df.columns = ["Foo1_1", "Foo_2"]
+df = pd.concat([df, new_df], axis="columns")
+df.drop("Foo", axis=1, inplace=True)
+Splitting strings on any of the multiple delimiters using regular expressions
+line = "asdf fjdk; afed, fjek,asdf,       foo"
+
+import re
+re.split(r"[;,\s]\s*", line)
+["asdf", "fjdk", "fjek", "asdf", "foo"]
+
+Strip excess characters from headers
+df.columns = df.columns.str.strip()
+Sum multiple columns/ add a total row
+df.loc["Total"] = df[["Column1", "Column2"]].sum()
+Transpose dataframe
+df = df.T
