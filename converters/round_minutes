@@ -1,0 +1,5 @@
+import pendulum
+
+
+def round_minutes(datetime: pendulum, base: int) -> int:
+    return int(datetime.minute/base) * base
