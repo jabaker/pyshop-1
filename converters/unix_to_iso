@@ -1,0 +1,18 @@
+import pendulum
+import pandas as pd
+
+
+class ConvertTZ:
+    def __init__(self, **kwargs) -> None:
+        self.data = kwargs.get("data")
+        self.unix_column = kwargs.get("unix_column")
+        self.unit = kwargs.get("unit", "x")
+
+    def convert_to_local_iso(self, x: str, tz: str) -> pendulum:
+        return pendulum.from_format(x, self.unit).in_tz(tz).naive().replace(second=0, microsecond=0)
+
+    def parse_data(self) -> pd.DataFrame:
+        df = self.data
+        df["datetime"] = df.apply(lambda x: self.convert_to_local_iso(x[self.unix_column], x["timezone"]), axis=1)
+
+        return df
