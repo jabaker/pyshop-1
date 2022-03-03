@@ -1,0 +1,4 @@
+def make_ordinal(year: int or str) -> str:
+    suffix = "th" if 11 <= (int(year) % 100) <= 13 else ["th", "st", "nd", "rd", "th"][min(int(year) % 10, 4)]
+
+    return f"{str(year)}{suffix}"
