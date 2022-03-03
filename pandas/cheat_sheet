@@ -1,0 +1,18 @@
+#Clean up headers that contain dot notation path
+df.columns = df.columns.str.split(".").str[-1]
+
+#Clean up missing values in multiple DataFrame columns
+df = df.fillna({
+    'col1': 'missing',
+    'col2': '99.999',
+    'col3': '999',
+    'col4': 'missing',
+    'col5': 'missing',
+    'col6': '99'
+})
+
+#Collapse hierarchical column indexes
+df.columns = df.columns.get_level_values(0)
+
+#Collapse rows to list
+df = df.groupby("column of non-unique values").agg(lambda x: tuple(x)).applymap(list).reset_index()
