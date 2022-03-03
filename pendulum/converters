@@ -1,0 +1,112 @@
+Current TimeZone
+
+import pendulum
+
+
+now = pendulum.now()
+
+time_zone = pendulum.local(now.year, now.month, now.day).timezone.name
+
+
+UTC Offset
+
+import pendulum
+
+
+now = pendulum.now()
+
+off_set = int(str(now).split("-")[-1].split(":")[0])
+
+
+Unix Time
+
+import pendulum
+
+
+now = pendulum.now()
+
+unix_millis = int(now.format("x"))
+unix_seconds = int(now.format("X"))
+unix_seconds = int(pendulum.now().timestamp())
+
+
+Round time to interval
+
+import pendulum
+
+
+now = pendulum.now()
+
+
+def round_minutes(dt: pendulum, base: int) -> int:
+    return int(dt.minute/base) * base
+
+end_datetime = now.replace(minute=round_minutes(now, 15))
+start_datetime = end_datetime.subtract(hours=1)
+
+
+Amazon week number from datetime
+
+import pendulum
+
+
+now = pendulum.now()
+
+
+def get_amazon_week(dt: pendulum) -> int:
+    return dt.add(days=1).isocalendar()[1]
+
+
+week_number = get_amazon_week(now)
+Start datetime of current week
+import pendulum
+
+
+now = pendulum.now()
+
+
+def get_week_start(dt: pendulum) -> pendulum:
+    return dt.previous(pendulum.SUNDAY).add(weeks=1 if dt.day_of_week == 0 else 0)
+
+
+start_datetime = get_week_start(now)
+
+
+Converting
+
+import pendulum
+
+
+tz = "US/Pacific"
+now = pendulum.now(tz)
+
+# datetime from hour int
+hour = 6
+dt = pendulum.parse(str(now.replace(hour=hour, minute=0, second=0, microsecond=0)))
+OR
+dt = now.at(hour)
+
+
+# datetime to unix milli seconds
+unix_millis = int(dt.format("x"))
+
+
+# unix milli seconds to datetime
+dt = pendulum.from_timestamp(unix_millis/1000, tz=tz)
+
+
+# datetime to unix seconds
+unix_seconds = int(dt.format("X"))
+
+
+# unix seconds to datetime
+dt = pendulum.from_timestamp(unix_seconds, tz=tz)
+
+
+# datetime str to datetime
+dt_string = dt.to_datetime_string()
+dt = pendulum.parse(dt_string, tz=tz)
+
+# datetime str to datetime when in an odd format
+dt_string = pendulum.now(tz).to_formatted_date_string()
+dt = pendulum.pendulum.from_format(dt_string, fmt="MMM DD, YYYY", tz=tz)
