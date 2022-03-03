@@ -1,0 +1,20 @@
+import os
+import glob
+
+import pendulum
+
+
+def check_files(path: str) -> list:
+    now = pendulum.now()
+    date_time = pendulum.local(now.year, now.month, now.day)
+
+    updated_files = []
+    for file in glob.glob(path):
+        file_timestamp = os.path.getmtime(glob.glob(file)[0])
+        utc_datetime = pendulum.from_timestamp(file_timestamp)
+        file_date = utc_datetime.in_tz(date_time.timezone.name).date()
+
+        if file_date == now.date():
+            updated_files.append(os.path.split(file)[1])
+
+    return updated_files
