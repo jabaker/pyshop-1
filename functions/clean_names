@@ -1,0 +1,35 @@
+import pandas as pd
+
+
+class Cleaner(object):
+    def __init__(self, **kwargs) -> None:
+        self.df = kwargs.get("dirty_df")
+        self.reversed = kwargs.get("reverse", False)
+        self.column_name = kwargs.get("column_name")
+
+    def reverse_names(self) -> pd.DataFrame:
+        return self.df[self.column_name].apply(lambda x: ", ".join(reversed(x.split(","))))
+
+    def remove_suffix(self) -> pd.DataFrame:
+        return self.df[self.column_name].str.replace("III|II|jr", "")
+
+    def fix_first_name(self) -> pd.DataFrame:
+        return self.df[self.column_name].apply(lambda x: x[0].split()[0].title() if
+                                               isinstance(x, list) else x.title())
+
+    def fix_last_name(self) -> pd.DataFrame:
+        return self.df[self.column_name].apply(lambda x: x[1].split()[0].title() if
+                                               isinstance(x, list) else x.title())
+
+    def clean_names(self) -> pd.DataFrame:
+        self.df[self.column_name] = self.df[self.column_name].str.lower()
+        if self.reversed:
+            self.df[self.column_name] = self.reverse_names()
+        self.df[self.column_name] = self.remove_suffix()
+        self.df[self.column_name] = self.df[self.column_name].str.split(",")
+        self.df["last"] = self.fix_first_name()
+        self.df["first"] = self.fix_last_name()
+        self.df[self.column_name] = self.df[["last", "first"]].apply(
+            lambda row: ", ".join(row.values.astype(str)), axis=1)
+
+        return self.df.drop(["first", "last"], axis=1)
