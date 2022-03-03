@@ -1,0 +1,18 @@
+class FindColumns:
+    """
+    :arg df: pd.DataFrame
+    :arg columns: list
+    :return list
+    """
+    def __init__(self, **kwargs):
+        self.df = kwargs.get("df")
+        self.non_empty_columns = self.df.mask(self.df.applymap(str).eq("[]")).dropna(axis=1, how="all").columns
+
+    def check_list(self) -> list:
+        return [x for x in self.non_empty_columns if isinstance(self.df[x][0], list)]
+
+    def check_dict(self) -> list:
+        return [x for x in self.non_empty_columns if isinstance(self.df[x][0], dict)]
+
+    def check_json(self) -> list:
+        return [x for x in self.check_list() if isinstance(self.df[x][0][0], dict)]
