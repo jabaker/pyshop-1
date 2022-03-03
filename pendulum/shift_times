@@ -1,0 +1,32 @@
+import pendulum
+
+
+class ShiftTimes:
+    """
+    :arg tz: str
+    :arg format: str
+    :return start_of_shift, end_of_shift: tuple
+    """
+    def __init__(self, **kwargs):
+        self.format = kwargs.get("format", False)
+        tz = kwargs.get("tz")
+        self.current = pendulum.now(tz)
+        self.today_date = self.current.to_date_string()
+        self.yesterday_date = self.current.subtract(days=1).to_date_string()
+        self.tomorrow_date = self.current.add(days=1).to_date_string()
+        self.current_hour = self.current.hour
+
+    @staticmethod
+    def in_between(now: int, start: int, end: int) -> bool:
+        return start <= now < end if start <= end else start <= now or now < end
+
+    def get_shift(self) -> tuple:
+        start_hour, end_hour = ("06", "18") if self.in_between(self.current_hour, 6, 18) else ("18", "06")
+
+        start_date = self.yesterday_date if self.in_between(self.current_hour, 0, 6) else self.today_date
+        start_of_shift = pendulum.parse(f"{start_date} {start_hour}:00").format(self.format)
+
+        end_date = self.today_date if self.in_between(self.current_hour, 0, 18) else self.tomorrow_date
+        end_of_shift = pendulum.parse(f"{end_date} {end_hour}:00").format(self.format)
+
+        return start_of_shift, end_of_shift
