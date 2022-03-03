@@ -1,0 +1,5 @@
+from fuzzywuzzy import fuzz
+
+
+def is_match(user_input: str, match: str):
+    return True if fuzz.ratio(user_input.strip().lower(), match.strip().lower()) >= 70 else False
