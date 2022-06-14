@@ -1,0 +1,46 @@
+__author__ = "jabaker"
+
+import os
+from collections import namedtuple
+from urllib import parse
+
+import requests
+from dotenv import load_dotenv
+
+
+class Signal:
+    """
+        :arg dict signal_bot={"phone_number": "15555555555", "key": "012345"}
+        :arg str
+        :return None
+
+        SIGNAL BOT
+        Add the phone number +34 603 21 25 97 into your Phone Contacts. (Name it as you wish)
+        Send this message "I allow callmebot to send me messages" to the new Contact created
+        (using Signal Messaging of course)
+        The bot will answer you with your personal apikey.
+        There is currently a limit of 40 messages per 240 minutes.
+    """
+    def __init__(self, **kwargs):
+        self.phone_number, self.api_key = self.get_secrets()
+        self.message = kwargs.get("message")
+
+    @staticmethod
+    def get_secrets() -> namedtuple:
+        load_dotenv()
+        config = eval(os.getenv("signal_bot"))
+
+        return namedtuple("API", config.keys())(**config)
+
+    def send_message(self) -> None:
+        url = (
+            "https://api.callmebot.com/signal/send.php?"
+            f"phone={self.phone_number}&"
+            f"apikey={self.api_key}&"
+            f"text={parse.quote(self.message)}"
+        )
+
+        with requests.Session() as request:
+            response = request.get(url)
+        if response.status_code != 200:
+            print(response.raise_for_status())
