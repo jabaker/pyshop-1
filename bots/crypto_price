@@ -1,0 +1,118 @@
+__author__ = "jabaker"
+
+import json
+import os
+from collections import namedtuple
+
+import pandas as pd
+import requests
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.triggers.cron import CronTrigger
+from dotenv import load_dotenv
+
+from tools.bot import Signal
+
+
+class Hodl:
+    def __init__(self):
+        self.key, self.coin, self.coin_count, self.spend = self.get_secrets()
+
+    def main(self) -> None:
+        message = (
+            self.get_data()
+            .pipe(self.parse_data)
+            .pipe(self.convert_to_string)
+        )
+
+        self.send_message(message)
+
+    @staticmethod
+    def get_secrets() -> namedtuple:
+        load_dotenv()
+
+        key = eval(os.getenv("crypto_key"))
+        config = eval(os.getenv("crypto_config"))
+        key.update(config)
+
+        return namedtuple("API", key.keys())(**key)
+
+    def get_data(self) -> pd.DataFrame:
+        url = (
+            "https://api.nomics.com/v1/currencies/ticker?"
+            f"key={self.key}&"
+            f"ids={self.coin}&"
+            "interval=1d&"
+            "convert=USD&"
+            "per-page=100&"
+            "page=1"
+        )
+
+        with requests.Session() as request:
+            response = request.get(url)
+        if response.status_code != 200:
+            print(response.raise_for_status())
+
+        data = json.loads(response.text)
+
+        return pd.DataFrame(data)
+
+    def parse_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = (df
+              .drop(columns="high_timestamp")
+              .assign(**pd.DataFrame(df["high_timestamp"].values.tolist())
+                      .add_prefix("high_timestamp"))
+              )
+        df["coin_count"] = self.coin_count
+        df["price"] = pd.to_numeric(df["price"], errors="ignore")
+        df["current_total"] = df["coin_count"] * df["price"]
+        df["high"] = pd.to_numeric(df["high"], errors="ignore")
+        df["high_total"] = df["coin_count"] * df["high"]
+        df["spend"] = self.spend
+        df["delta"] = df["current_total"] - df["spend"]
+        df["avg_coin_cost"] = df["spend"] / df["coin_count"]
+
+        for column in [x for x in df.columns if "timestamp" in x]:
+            df[column] = (
+                pd.to_datetime(df[column])
+                .dt.tz_convert("US/Pacific")
+                .dt.tz_localize(None)
+            )
+        df.rename(columns={"price_timestamp": "current_datetime"}, inplace=True)
+        df = df.round(2)
+        df = df[[
+            "symbol", "price", "coin_count", "current_datetime", "spend",
+            "avg_coin_cost", "current_total", "delta", "high", "high_total"
+        ]].transpose()
+
+        return df.reset_index()
+
+    @staticmethod
+    def convert_to_string(df: pd.DataFrame) -> str:
+        df["message"] = [": ".join(x) for x in zip(df.pop("index").map(str), df.pop(0).map(str))]
+
+        messages = [row["message"] for _, row in df.iterrows()]
+        star_count = len(max(messages, key=len)) + 4
+        message = "\n".join(messages)
+
+        return f"\n{'*' * star_count}\n{message}\n{'*' * star_count}"
+
+    @staticmethod
+    def send_message(message: str) -> None:
+        Signal(message=message).send_message()
+
+
+def run_job() -> None:
+    Hodl().main()
+
+
+if __name__ == "__main__":
+    schedule = BlockingScheduler()
+    trigger = CronTrigger(day_of_week="*", hour="*")
+    schedule.add_job(
+        run_job,
+        trigger,
+        misfire_grace_time=1000,
+        max_instances=20,
+        coalesce=True
+    )
+    schedule.start()
