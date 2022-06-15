@@ -16,6 +16,10 @@ from tools.bot import Signal
 
 
 class Hodl:
+    """
+        https://nomics.com/docs/
+        limit of one request per second
+    """
     def __init__(self):
         self.key, self.coin, self.coin_count, self.spend = self.get_secrets()
         self.timezone = pendulum.now().timezone.name
