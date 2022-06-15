@@ -30,7 +30,7 @@ class Signal:
         load_dotenv()
         config = eval(os.getenv("signal_bot"))
 
-        return namedtuple("API", config.keys())(**config)
+        return namedtuple("API", config)(**config)
 
     def send_message(self) -> None:
         url = (
