@@ -1,0 +1,10 @@
+__author__ = "jabaker"
+__version__ = "1.0.0"
+
+from pathlib import Path
+
+
+def get_path_of_file(file_to_find: str) -> str:
+    files = (str(x) for x in Path(Path.home()).rglob("*") if x.is_file())
+
+    return [x for x in files if file_to_find in x][0]
